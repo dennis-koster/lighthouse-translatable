@@ -1,0 +1,24 @@
+{
+    "name": "dennis-koster/lighthouse-translatable",
+    "description": "Adds translatable directive for automatic schema generation for translatable fields",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "DennisKoster\\LighthouseTranslatable\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Dennis Koster",
+            "email": "dennis.koster@endeavour.nl"
+        }
+    ],
+    "require": {},
+    "extra": {
+        "laravel": {
+            "providers": [
+                "DennisKoster\\LighthouseTranslatable\\Providers\\LighthouseTranslatableProvider"
+            ]
+        }
+    }
+}
