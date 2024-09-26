@@ -3,14 +3,14 @@ name: PHPUnit
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
   pull_request:
     branches:
       - '*'
 
 jobs:
   test:
-    runs-on: 'ubuntu-22.04'
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
@@ -23,21 +23,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.composer/cache/files
-          key: dependencies-php-${{ matrix.php }}-composer-${{ hashFiles('composer.json') }}
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip
-          coverage: none
+      - name: Start PHP container
+        run: docker compose up -d php-${{ matrix.php }}
 
       - name: Install dependencies
-        run: composer update --${{ matrix.dependency-version }} --no-interaction
+        run: docker compose exec php-${{ matrix.php }} composer update --${{ matrix.dependency-version }} --no-interaction
 
       - name: Execute tests
-        run: vendor/bin/phpunit --configuration=phpunit.xml --no-coverage
+        run: docker compose exec php-${{ matrix.php }} vendor/bin/phpunit --configuration=phpunit.xml --no-coverage
+
+      - name: Stop PHP container
+        run: docker compose down php-${{ matrix.php }}
