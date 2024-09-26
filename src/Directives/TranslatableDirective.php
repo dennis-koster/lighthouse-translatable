@@ -154,7 +154,7 @@ SDL;
         return new DirectiveArguments(
             $this->directiveArgValue('translationTypeName', "{$rootTypeName}Translation"),
             $this->directiveArgValue('inputTypeName', "{$rootTypeName}TranslationInput"),
-            $this->directiveArgValue('translationsAttributeName', 'translations'),
+            $this->directiveArgValue('translationsAttribute', 'translations'),
             $this->directiveArgValue('generateTranslationType', true),
             $this->directiveArgValue('generateInputType', true),
             $this->directiveArgValue('appendInput', []),
