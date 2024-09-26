@@ -7,18 +7,30 @@
             "DennisKoster\\LighthouseTranslatable\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Dennis Koster",
             "email": "dennis.koster@endeavour.nl"
         }
     ],
-    "require": {},
+    "require": {
+        "nuwave/lighthouse": "^6"
+    },
     "extra": {
         "laravel": {
             "providers": [
                 "DennisKoster\\LighthouseTranslatable\\Providers\\LighthouseTranslatableProvider"
             ]
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.3",
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "^9"
     }
 }

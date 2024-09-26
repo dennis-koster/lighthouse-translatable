@@ -1,0 +1,3 @@
+providers:
+ - Nuwave\Lighthouse\LighthouseServiceProvider
+ - DennisKoster\LighthouseTranslatable\Providers\LighthouseTranslatableProvider
