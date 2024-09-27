@@ -42,23 +42,23 @@ Generates translations attribute for the type.
 """
 directive @translatable(
     """
-    Whether or not to generate a type for the translation model. Defaults to true.
+    Whether or not to generate a type for the translation definition. Defaults to true.
     """
     generateTranslationType: Boolean! = true
     """
-    The name of the type to be generated for the translation model. Defaults to "<BaseType>Translation".
+    The name of the type to be generated for the translation definition. Defaults to "<BaseType>Translation".
     """
     translationTypeName: String! = "<BaseType>Translation"
     """
-    The name of the attribute that holds the array of translation models. Defaults to "translations".
+    The name of the attribute that holds the array of translations. Defaults to "translations".
     """
     translationsAttribute: String! = "translations"
     """
-    Whether or not to generate a type for the translation model input. Defaults to true.
+    Whether or not to generate a type for the translation input definition. Defaults to true.
     """
     generateInputType: Boolean! = true
     """
-    The name of the type to be generated for the translation model input. Defaults to "<BaseType>TranslationInput".
+    The name of the type to be generated for the translation input definition. Defaults to "<BaseType>TranslationInput".
     """
     inputTypeName: String!  = "<BaseType>TranslationInput"
     """
