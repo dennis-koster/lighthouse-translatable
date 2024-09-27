@@ -3,6 +3,23 @@
     "name": "dennis-koster/lighthouse-translatable",
     "description": "Adds translatable directive for automatic schema generation for translatable fields",
     "type": "library",
+    "license": "MIT",
+    "homepage": "https://github.com/dennis-koster/lighthouse-translatable",
+    "keywords": [
+        "laravel",
+        "translations",
+        "translatable",
+        "lighthouse",
+        "type",
+        "graphql"
+    ],
+    "authors": [
+        {
+            "name": "Dennis Koster",
+            "email": "dennis.koster@endeavour.nl",
+            "homepage": "https://github.com/dennis-koster"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "DennisKoster\\LighthouseTranslatable\\": "src/"
@@ -13,14 +30,13 @@
             "Tests\\": "tests/"
         }
     },
-    "authors": [
-        {
-            "name": "Dennis Koster",
-            "email": "dennis.koster@endeavour.nl"
-        }
-    ],
     "require": {
         "nuwave/lighthouse": "^6"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.3",
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "^9"
     },
     "extra": {
         "laravel": {
@@ -28,10 +44,5 @@
                 "DennisKoster\\LighthouseTranslatable\\Providers\\LighthouseTranslatableProvider"
             ]
         }
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^11.3",
-        "mockery/mockery": "^1.6",
-        "orchestra/testbench": "^9"
     }
 }
