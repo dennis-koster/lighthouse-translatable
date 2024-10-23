@@ -1,5 +1,5 @@
 {
-    "version": "0.2.2",
+    "version": "0.2.3",
     "name": "dennis-koster/lighthouse-translatable",
     "description": "Adds translatable directive for automatic schema generation for translatable fields",
     "type": "library",

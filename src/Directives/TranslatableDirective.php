@@ -174,7 +174,7 @@ SDL;
         DirectiveArguments $directiveArguments,
     ): FieldDefinitionNode {
         $template = $this->viewFactory
-            ->file($this->config->get('lighthouse-translatable.stubs.translations-field'))
+            ->file($this->getStubFilePath('translations-field'))
             ->with([
                 'attributeName'       => $directiveArguments->translationsAttributeName,
                 'translationTypeName' => $directiveArguments->translationTypeName,
@@ -188,7 +188,7 @@ SDL;
         DirectiveArguments $directiveArguments,
     ): InputValueDefinitionNode {
         $template = $this->viewFactory
-            ->file($this->config->get('lighthouse-translatable.stubs.translations-input-field'))
+            ->file($this->getStubFilePath('translations-input-field'))
             ->with([
                 'attributeName'            => $directiveArguments->translationsAttributeName,
                 'translationInputTypeName' => $directiveArguments->inputTypeName,
@@ -248,5 +248,12 @@ SDL;
             $this->directiveArgValue('generateInputType', true),
             $this->directiveArgValue('appendInput', []),
         );
+    }
+
+    protected function getStubFilePath(string $stubConfiguration): string
+    {
+        return $this->config->get('lighthouse-translatable.stub-directory')
+            . DIRECTORY_SEPARATOR
+            . $this->config->get("lighthouse-translatable.stubs.{$stubConfiguration}");
     }
 }
