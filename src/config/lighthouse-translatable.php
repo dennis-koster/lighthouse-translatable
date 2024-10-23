@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-$stubDirectory = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'stubs';
+$stubDirectory = base_path('vendor/dennis-koster/lighthouse-translatable/src/stubs');
 
 return [
     'stubs' => [
