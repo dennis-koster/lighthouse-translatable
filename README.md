@@ -151,7 +151,7 @@ input FooBarTranslationInput {
 ## Configuration
 The directive comes with a configuration file that can be published through:
 ```shell
-php artisan vendor:publish --provider=DennisKoster\\LighthouseTranslatable\\Directives
+php artisan vendor:publish --provider=DennisKoster\\LighthouseTranslatable\\Providers\\LighthouseTranslatableProvider
 ```
 
 Through the configuration file, the stub file locations can be altered. 
