@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Integration\Directives;
 
 use GraphQL\Type\Schema;
-use GraphQL\Utils\SchemaPrinter;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Integration\AbstractIntegrationTestCase;
 use Tests\Utilities\Traits\SchemaAssertions;
@@ -72,8 +71,6 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
 
         static::assertTrue($schema->hasType('FooBarTranslation'));
         static::assertTrue($schema->hasType('FooBarInput'));
-
-        $schemaString = SchemaPrinter::doPrint($schema);
 
         static::assertSchemaContains(
             $schema,

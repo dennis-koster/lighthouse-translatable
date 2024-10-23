@@ -22,5 +22,4 @@ services:
     extends:
       service: php-8.3
     volumes:
-      - ./vendor:/var/www/html/vendor
-      - ./tests:/var/www/html/tests
+      - .:/var/www/html

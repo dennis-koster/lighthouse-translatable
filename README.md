@@ -147,3 +147,11 @@ input FooBarTranslationInput {
     introduction: String
 }
 ```
+
+## Configuration
+The directive comes with a configuration file that can be published through:
+```shell
+php artisan vendor:publish --provider=DennisKoster\\LighthouseTranslatable\\Directives
+```
+
+Through the configuration file, the stub file locations can be altered. 
