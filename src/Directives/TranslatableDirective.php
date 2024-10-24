@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace DennisKoster\LighthouseTranslatable\Directives;
 
+use DennisKoster\LighthouseTranslatable\DataObjects\Attribute;
 use DennisKoster\LighthouseTranslatable\DataObjects\DirectiveArguments;
 use DennisKoster\LighthouseTranslatable\GraphQL\Scalars\TranslatableString;
+use DennisKoster\LighthouseTranslatable\Parsers\FieldDefinitionStringParser;
 use GraphQL\Language\AST\FieldDefinitionNode;
+use GraphQL\Language\AST\InputObjectTypeDefinitionNode;
 use GraphQL\Language\AST\InputValueDefinitionNode;
+use GraphQL\Language\AST\NameNode;
 use GraphQL\Language\AST\NodeList;
-use GraphQL\Language\AST\NonNullTypeNode;
 use GraphQL\Language\AST\ObjectTypeDefinitionNode;
 use GraphQL\Language\AST\TypeDefinitionNode;
 use GraphQL\Language\Parser;
-use GraphQL\Type\Definition\InputObjectType;
-use GraphQL\Type\Definition\ObjectType;
-use GraphQL\Type\Definition\Type;
+use GraphQL\Language\Printer;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\View\Factory;
 use Nuwave\Lighthouse\Events\ManipulateAST;
@@ -31,6 +32,7 @@ class TranslatableDirective extends BaseDirective implements TypeManipulator
         protected TypeRegistry $typeRegistry,
         protected Dispatcher $eventDispatcher,
         protected Factory $viewFactory,
+        protected FieldDefinitionStringParser $fieldDefinitionStringParser,
     ) {
     }
 
@@ -79,28 +81,26 @@ SDL;
 
         $typeName           = $typeDefinition->getName()->value;
         $directiveArguments = $this->getDirectiveArguments($typeName);
-        $translatableFields = $this->extractTranslatableFields($typeDefinition->fields);
-
-//        $this->stripTranslatableFieldsFromOriginalTypeDefinition($typeDefinition);
-
-        if (empty($translatableFields)) {
-            return;
-        }
 
         if ($directiveArguments->generateTranslationType) {
-            $this->registerTranslationType($directiveArguments, $translatableFields);
+            // Generate and register the type definition for the <Model>Translation type
+            $translationTypeDefinition = $this->makeTranslationType($directiveArguments, $typeDefinition);
+            $documentAST->setTypeDefinition($translationTypeDefinition);
 
+            // Append the "translations" attribute to the root type
             $typeDefinition->fields = ASTHelper::prepend(
                 $typeDefinition->fields,
-                $this->getTranslationsFieldDefinition($directiveArguments)
+                $this->makeTranslationsField($directiveArguments)
             );
         }
 
         if ($directiveArguments->generateInputType) {
-            $this->registerTranslationInputType($directiveArguments, $translatableFields);
+            // Generate and register the input type definition for the <Model>TranslationInput type
+            $translationTypeDefinition = $this->makeInputType($directiveArguments, $typeDefinition);
+            $documentAST->setTypeDefinition($translationTypeDefinition);
 
             if (! empty($directiveArguments->appendInput)) {
-                $inputValueDefinition = $this->getTranslationsInputValueDefinition($directiveArguments);
+                $inputValueDefinition = $this->makeTranslationsInput($directiveArguments);
 
                 $this->appendToInputTypes($inputValueDefinition, $directiveArguments->appendInput);
             }
@@ -108,33 +108,32 @@ SDL;
     }
 
     /**
-     * @param array<string, array<string, Type>> $translatableFields
+     * Makes the object type definition for <BaseType>Translation
      */
-    protected function registerTranslationType(
+    protected function makeTranslationType(
         DirectiveArguments $directiveArguments,
-        array $translatableFields,
-    ): void {
-        $this->typeRegistry->register(
-            new ObjectType([
-                'name'   => $directiveArguments->translationTypeName,
-                'fields' => $translatableFields,
-            ]),
-        );
+        ObjectTypeDefinitionNode $typeDefinition,
+    ): ObjectTypeDefinitionNode {
+        return new ObjectTypeDefinitionNode([
+            'name'       => new NameNode(['value' => $directiveArguments->translationTypeName]),
+            'fields'     => new NodeList($this->getTranslatableFields($typeDefinition)),
+            'interfaces' => new NodeList([]),
+            'directives' => new NodeList([]),
+        ]);
     }
 
     /**
-     * @param array<string, array<string, Type>> $translatableFields
+     * Makes the input object type for <BaseType>TranslationInput
      */
-    protected function registerTranslationInputType(
+    protected function makeInputType(
         DirectiveArguments $directiveArguments,
-        array $translatableFields
-    ): void {
-        $this->typeRegistry->register(
-            new InputObjectType([
-                'name'   => $directiveArguments->inputTypeName,
-                'fields' => $translatableFields,
-            ]),
-        );
+        ObjectTypeDefinitionNode $typeDefinition,
+    ): InputObjectTypeDefinitionNode {
+        return new InputObjectTypeDefinitionNode([
+            'name'       => new NameNode(['value' => $directiveArguments->inputTypeName]),
+            'fields'     => new NodeList($this->getTranslatableFields($typeDefinition, true)),
+            'directives' => new NodeList([]),
+        ]);
     }
 
     /**
@@ -170,7 +169,14 @@ SDL;
         );
     }
 
-    protected function getTranslationsFieldDefinition(
+    /**
+     * Creates a field definition node for:
+     * translations: [<BaseType>Translation!]!
+     *
+     * @param DirectiveArguments $directiveArguments
+     * @return FieldDefinitionNode
+     */
+    protected function makeTranslationsField(
         DirectiveArguments $directiveArguments,
     ): FieldDefinitionNode {
         $template = $this->viewFactory
@@ -183,7 +189,14 @@ SDL;
         return Parser::fieldDefinition($template);
     }
 
-    protected function getTranslationsInputValueDefinition(
+    /**
+     * Creates an input definition for:
+     * translations: [<BaseType>TranslationInput!]!
+     *
+     * @param DirectiveArguments $directiveArguments
+     * @return InputValueDefinitionNode
+     */
+    protected function makeTranslationsInput(
         DirectiveArguments $directiveArguments,
     ): InputValueDefinitionNode {
         $template = $this->viewFactory
@@ -194,6 +207,33 @@ SDL;
             ->render();
 
         return Parser::inputValueDefinition($template);
+    }
+
+    protected function getAttributeFromFieldDefinitionNode(
+        FieldDefinitionNode $fieldDefinitionNode,
+    ): Attribute {
+        $printed = Printer::doPrint($fieldDefinitionNode);
+
+        return $this->fieldDefinitionStringParser->parse($printed);
+    }
+
+    protected function makeFieldOrInputDefinition(
+        Attribute $parts,
+        bool $asInput = false,
+    ): FieldDefinitionNode | InputValueDefinitionNode {
+        if ($asInput) {
+            return Parser::inputValueDefinition(
+                $this->viewFactory
+                    ->make('lighthouse-translatable::translatable-attribute-input', get_object_vars($parts))
+                    ->render()
+            );
+        }
+
+        return Parser::fieldDefinition(
+            $this->viewFactory
+                ->make('lighthouse-translatable::translatable-attribute-field', get_object_vars($parts))
+                ->render()
+        );
     }
 
     protected function stripTranslatableFieldsFromOriginalTypeDefinition(
@@ -213,42 +253,35 @@ SDL;
     }
 
     /**
-     * Loop over the list of fields and find any attribute
-     * of the TranslatableString scalar type.
-     *
-     * @param NodeList<FieldDefinitionNode> $fields
-     * @return array<string, array<string, Type>>
+     * @return array<int, FieldDefinitionNode>
      */
-    protected function extractTranslatableFields(NodeList $fields): array
-    {
-        $translatableFields = [];
+    protected function getTranslatableFields(
+        ObjectTypeDefinitionNode $typeDefinition,
+        bool $asInput = false,
+    ): array {
+        $fields = [];
 
-        foreach ($fields as $field) {
-            $fieldType = $field->type;
-            $fieldName = $field->name->value;
-
-            if (ASTHelper::getUnderlyingTypeName($fieldType) !== (new TranslatableString)->name) {
+        foreach ($typeDefinition->fields as $field) {
+            if (ASTHelper::getUnderlyingTypeName($field->type) !== (new TranslatableString)->name) {
                 continue;
             }
 
-            $required = $fieldType instanceof NonNullTypeNode;
-            $type     = $required
-                ? Type::nonNull(Type::string())
-                : Type::string();
+            $attribute = $this->getAttributeFromFieldDefinitionNode($field);
 
-            $translatableFields[$fieldName] = [
-                'type'       => $type,
-                'directives' => $field->directives,
-            ];
+            $fields[] = $this->makeFieldOrInputDefinition($attribute, $asInput);
         }
 
-        if (! empty($translatableFields)) {
-            $translatableFields['locale'] = [
-                'type' => Type::nonNull(Type::String()),
-            ];
-        }
+        // Append locale fields
+        $fields[] = $this->makeFieldOrInputDefinition(
+            new Attribute(
+                'locale',
+                'String',
+                true,
+            ),
+            $asInput
+        );
 
-        return $translatableFields;
+        return $fields;
     }
 
     protected function getDirectiveArguments(

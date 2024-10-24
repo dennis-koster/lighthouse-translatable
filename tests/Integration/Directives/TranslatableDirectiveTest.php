@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Directives;
 
+use GraphQL\Language\Printer;
 use GraphQL\Type\Schema;
+use GraphQL\Utils\SchemaPrinter;
+use Nuwave\Lighthouse\Testing\MocksResolvers;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Integration\AbstractIntegrationTestCase;
 use Tests\Utilities\Traits\SchemaAssertions;
@@ -12,6 +15,7 @@ use Tests\Utilities\Traits\SchemaAssertions;
 class TranslatableDirectiveTest extends AbstractIntegrationTestCase
 {
     use SchemaAssertions;
+    use MocksResolvers;
 
     protected function setUp(): void
     {
@@ -37,6 +41,7 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
                 title: TranslatableString!
                 description: TranslatableString
                 slug: String!
+                fooBar: TranslatableString
             }'
         );
 
@@ -46,7 +51,8 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
             type NewsItemTranslation {
                 title: String!
                 description: String
-                locale: String!
+                fooBar: String                                
+                locale: String!                
             }',
         );
 
@@ -56,7 +62,8 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
             input NewsItemTranslationInput {
                 title: String!
                 description: String
-                locale: String!
+                fooBar: String                                
+                locale: String!  
             }',
         );
     }
@@ -81,6 +88,7 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
                 title: TranslatableString!
                 description: TranslatableString
                 slug: String!
+                fooBar: TranslatableString
             }',
         );
 
@@ -88,9 +96,10 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
             $schema,
             /** @lang GraphQL */ '
             type FooBarTranslation {
-              title: String!
-              description: String
-              locale: String!
+                title: String!
+                description: String
+                fooBar: String                                
+                locale: String!    
             }',
         );
 
@@ -98,9 +107,10 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
             $schema,
             /** @lang GraphQL */ '
             input FooBarInput {
-              title: String!
-              description: String
-              locale: String!
+                title: String!
+                description: String
+                fooBar: String                                
+                locale: String!    
             }',
         );
     }
@@ -118,9 +128,10 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
             $schema,
             /** @lang GraphQL */ '
             input NewsItemTranslationInput {
-              title: String!
-              description: String
-              locale: String!
+                title: String!
+                description: String
+                fooBar: String                                
+                locale: String!    
             }',
         );
     }
@@ -138,7 +149,8 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
             type NewsItemTranslation {
                 title: String!
                 description: String
-                locale: String!
+                fooBar: String                                
+                locale: String!    
             }',
         );
     }
@@ -157,6 +169,7 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
                 title: TranslatableString!
                 description: TranslatableString
                 slug: String!
+                fooBar: TranslatableString
             }',
         );
     }
@@ -198,6 +211,49 @@ GRAPHQL;
         );
     }
 
+    #[Test]
+    public function it_copies_the_directives_from_the_main_type_to_the_translation_types(): void
+    {
+        $this->mockResolver(function ($root, array $args) {
+            static::assertSame('Testing', $args['input']['translations'][0]['foo_bar']);
+
+            return $args['input'];
+        });
+
+        $query = <<<GRAPHQL
+input NewsItemInput {
+    foo: String
+}
+
+type Mutation {
+    createNewsItem(input: NewsItemInput!): NewsItem! @mock
+}
+GRAPHQL;
+
+        $this->getSchema(
+            '@translatable(appendInput: ["NewsItemInput"])',
+            $query,
+        );
+
+$mutation = <<<GRAPHQL
+mutation {
+    createNewsItem(input: {
+        translations: [{
+            title: "Title"
+            fooBar: "   Testing  "
+            locale: "en"
+        }]
+    }) {
+        translations {
+            fooBar
+        }
+    }
+}
+GRAPHQL;
+
+        $this->graphQL($mutation);
+    }
+
     protected function getSchema(
         string $directive = '@translatable',
         string $additionalSchemaDefinitions = '',
@@ -208,6 +264,9 @@ type NewsItem {$directive} {
     title: TranslatableString!
     description: TranslatableString
     slug: String!
+    fooBar: TranslatableString 
+        @trim
+        @rename(attribute: "foo_bar")
 }
 {$additionalSchemaDefinitions}
 GRAPHQL;

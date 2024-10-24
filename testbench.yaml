@@ -1,3 +1,4 @@
 providers:
  - Nuwave\Lighthouse\LighthouseServiceProvider
+ - Nuwave\Lighthouse\Testing\TestingServiceProvider
  - DennisKoster\LighthouseTranslatable\Providers\LighthouseTranslatableProvider

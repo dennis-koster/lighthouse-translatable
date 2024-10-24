@@ -14,8 +14,8 @@ trait StringAssertions
         string $message = '',
     ): void {
         static::assertStringNotContainsString(
-            static::trimLeadingWhitespaceOnEveryLine($needle),
-            static::trimLeadingWhitespaceOnEveryLine($haystack),
+            static::trimWhitespaceOnEveryLine($needle),
+            static::trimWhitespaceOnEveryLine($haystack),
             $message,
         );
     }
@@ -26,18 +26,18 @@ trait StringAssertions
         string $message = '',
     ): void {
         static::assertStringContainsString(
-            static::trimLeadingWhitespaceOnEveryLine($needle),
-            static::trimLeadingWhitespaceOnEveryLine($haystack),
+            static::trimWhitespaceOnEveryLine($needle),
+            static::trimWhitespaceOnEveryLine($haystack),
             $message,
         );
     }
 
-    protected static function trimLeadingWhitespaceOnEveryLine(string $string): string
+    protected static function trimWhitespaceOnEveryLine(string $string): string
     {
         return implode(
             PHP_EOL,
             array_map(
-                fn (string $line) => ltrim($line, ' '),
+                fn (string $line) => trim($line, ' '),
                 explode(PHP_EOL, $string)
             ),
         );
