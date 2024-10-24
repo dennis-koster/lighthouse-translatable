@@ -16,7 +16,6 @@ use GraphQL\Language\Parser;
 use GraphQL\Type\Definition\InputObjectType;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
-use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\View\Factory;
 use Nuwave\Lighthouse\Events\ManipulateAST;
@@ -32,7 +31,6 @@ class TranslatableDirective extends BaseDirective implements TypeManipulator
         protected TypeRegistry $typeRegistry,
         protected Dispatcher $eventDispatcher,
         protected Factory $viewFactory,
-        protected Config $config,
     ) {
     }
 
@@ -82,6 +80,8 @@ SDL;
         $typeName           = $typeDefinition->getName()->value;
         $directiveArguments = $this->getDirectiveArguments($typeName);
         $translatableFields = $this->extractTranslatableFields($typeDefinition->fields);
+
+//        $this->stripTranslatableFieldsFromOriginalTypeDefinition($typeDefinition);
 
         if (empty($translatableFields)) {
             return;
@@ -174,8 +174,7 @@ SDL;
         DirectiveArguments $directiveArguments,
     ): FieldDefinitionNode {
         $template = $this->viewFactory
-            ->file($this->getStubFilePath('translations-field'))
-            ->with([
+            ->make('lighthouse-translatable::translations-field', [
                 'attributeName'       => $directiveArguments->translationsAttributeName,
                 'translationTypeName' => $directiveArguments->translationTypeName,
             ])
@@ -188,14 +187,29 @@ SDL;
         DirectiveArguments $directiveArguments,
     ): InputValueDefinitionNode {
         $template = $this->viewFactory
-            ->file($this->getStubFilePath('translations-input-field'))
-            ->with([
+            ->make('lighthouse-translatable::translations-input-field', [
                 'attributeName'            => $directiveArguments->translationsAttributeName,
                 'translationInputTypeName' => $directiveArguments->inputTypeName,
             ])
             ->render();
 
         return Parser::inputValueDefinition($template);
+    }
+
+    protected function stripTranslatableFieldsFromOriginalTypeDefinition(
+        ObjectTypeDefinitionNode $typeDefinition,
+    ): ObjectTypeDefinitionNode {
+        foreach ($typeDefinition->fields as $key => $field) {
+            $fieldType = $field->type;
+
+            if (ASTHelper::getUnderlyingTypeName($fieldType) !== (new TranslatableString)->name) {
+                continue;
+            }
+
+            unset($typeDefinition->fields[$key]);
+        }
+
+        return $typeDefinition;
     }
 
     /**
@@ -248,12 +262,5 @@ SDL;
             $this->directiveArgValue('generateInputType', true),
             $this->directiveArgValue('appendInput', []),
         );
-    }
-
-    protected function getStubFilePath(string $stubConfiguration): string
-    {
-        return $this->config->get('lighthouse-translatable.stub-directory')
-            . DIRECTORY_SEPARATOR
-            . $this->config->get("lighthouse-translatable.stubs.{$stubConfiguration}");
     }
 }

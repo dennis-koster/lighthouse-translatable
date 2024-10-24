@@ -6,7 +6,6 @@ namespace DennisKoster\LighthouseTranslatable\Providers;
 
 use DennisKoster\LighthouseTranslatable\GraphQL\Scalars\TranslatableString;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Contracts\View\Factory;
 use Illuminate\Support\ServiceProvider;
 use Nuwave\Lighthouse\Events\RegisterDirectiveNamespaces;
 use Nuwave\Lighthouse\Schema\TypeRegistry;
@@ -26,17 +25,15 @@ class LighthouseTranslatableProvider extends ServiceProvider
             ],
         );
 
+        $this->loadViewsFrom($this->packageRoot() . '/resources/views', 'lighthouse-translatable');
+
         $this->publishes([
-            __DIR__ . '/../config/lighthouse-translatable.php' => config_path('lighthouse-translatable.php'),
-        ]);
+            $this->packageRoot() . '/resources/views' => resource_path('views/vendor/lighthouse-translatable'),
+        ], 'views');
     }
 
-    public function register(): void
+    protected function packageRoot(): string
     {
-        $this->app->make(Factory::class)->addExtension('graphql-stub', 'blade');
-
-        $this->mergeConfigFrom(
-            __DIR__ . '/../config/lighthouse-translatable.php', 'lighthouse-translatable'
-        );
+        return dirname(__DIR__);
     }
 }
