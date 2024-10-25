@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration\Directives;
 
-use GraphQL\Language\Printer;
 use GraphQL\Type\Schema;
-use GraphQL\Utils\SchemaPrinter;
 use Nuwave\Lighthouse\Testing\MocksResolvers;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Integration\AbstractIntegrationTestCase;
@@ -69,7 +67,7 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
     }
 
     #[Test]
-    public function it_generates_translation_type_and_input_type_with_a_custom_name(): void
+    public function it_generates_translation_type_and_input_type_with_a_custom_name_provided_through_the_directive(): void
     {
         $schema = $this->getSchema('@translatable(
             translationTypeName: "FooBarTranslation"
@@ -116,7 +114,54 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
     }
 
     #[Test]
-    public function it_does_not_generate_an_input_type(): void
+    public function it_generates_translation_type_and_input_type_with_a_custom_name_provided_through_the_config(): void
+    {
+        $this->app['config']->set('lighthouse-translatable.directive-defaults.translation-type-name', 'FooBarTranslation');
+        $this->app['config']->set('lighthouse-translatable.directive-defaults.input-type-name', 'FooBarInput');
+
+        $schema = $this->getSchema();
+
+        static::assertTrue($schema->hasType('FooBarTranslation'));
+        static::assertTrue($schema->hasType('FooBarInput'));
+
+        static::assertSchemaContains(
+            $schema,
+            /** @lang GraphQL */ '
+            type NewsItem {
+                translations: [FooBarTranslation!]!
+                id: ID!
+                title: TranslatableString!
+                description: TranslatableString
+                slug: String!
+                fooBar: TranslatableString
+            }',
+        );
+
+        static::assertSchemaContains(
+            $schema,
+            /** @lang GraphQL */ '
+            type FooBarTranslation {
+                title: String!
+                description: String
+                fooBar: String                                
+                locale: String!    
+            }',
+        );
+
+        static::assertSchemaContains(
+            $schema,
+            /** @lang GraphQL */ '
+            input FooBarInput {
+                title: String!
+                description: String
+                fooBar: String                                
+                locale: String!    
+            }',
+        );
+    }
+
+    #[Test]
+    public function it_does_not_generate_an_input_type_if_specified_through_the_directive(): void
     {
         $schema = $this->getSchema('@translatable(
             generateInputType: false
@@ -137,7 +182,28 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
     }
 
     #[Test]
-    public function it_does_not_generate_translation_type(): void
+    public function it_does_not_generate_an_input_type_if_specified_through_the_config(): void
+    {
+        $this->app['config']->set('lighthouse-translatable.directive-defaults.generate-input-type', false);
+
+        $schema = $this->getSchema();
+
+        static::assertFalse($schema->hasType('NewsItemTranslationInput'));
+
+        static::assertSchemaNotContains(
+            $schema,
+            /** @lang GraphQL */ '
+            input NewsItemTranslationInput {
+                title: String!
+                description: String
+                fooBar: String                                
+                locale: String!    
+            }',
+        );
+    }
+
+    #[Test]
+    public function it_does_not_generate_translation_type_if_specified_through_the_directive(): void
     {
         $schema = $this->getSchema('@translatable(generateTranslationType: false)');
 
@@ -156,9 +222,51 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
     }
 
     #[Test]
-    public function it_uses_a_custom_name_for_the_translations_attribute(): void
+    public function it_does_not_generate_translation_type_if_specified_through_the_config(): void
+    {
+        $this->app['config']->set('lighthouse-translatable.directive-defaults.generate-translation-type', false);
+
+        $schema = $this->getSchema();
+
+        static::assertFalse($schema->hasType('NewsItemTranslation'));
+
+        static::assertSchemaNotContains(
+            $schema,
+            /** @lang GraphQL */ '
+            type NewsItemTranslation {
+                title: String!
+                description: String
+                fooBar: String                                
+                locale: String!    
+            }',
+        );
+    }
+
+    #[Test]
+    public function it_uses_a_custom_name_for_the_translations_attribute_specified_through_the_directive(): void
     {
         $schema = $this->getSchema('@translatable(translationsAttribute: "alternativeLanguages")');
+
+        static::assertSchemaContains(
+            $schema,
+            /** @lang GraphQL */ '
+            type NewsItem {
+                alternativeLanguages: [NewsItemTranslation!]!
+                id: ID!
+                title: TranslatableString!
+                description: TranslatableString
+                slug: String!
+                fooBar: TranslatableString
+            }',
+        );
+    }
+
+    #[Test]
+    public function it_uses_a_custom_name_for_the_translations_attribute_specified_through_the_config(): void
+    {
+        $this->app['config']->set('lighthouse-translatable.directive-defaults.translations-attribute', 'alternativeLanguages');
+
+        $schema = $this->getSchema();
 
         static::assertSchemaContains(
             $schema,
@@ -235,7 +343,7 @@ GRAPHQL;
             $query,
         );
 
-$mutation = <<<GRAPHQL
+        $mutation = <<<GRAPHQL
 mutation {
     createNewsItem(input: {
         translations: [{

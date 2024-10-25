@@ -30,6 +30,17 @@ class LighthouseTranslatableProvider extends ServiceProvider
         $this->publishes([
             $this->packageRoot() . '/resources/views' => resource_path('views/vendor/lighthouse-translatable'),
         ], 'views');
+
+        $this->publishes([
+            $this->packageRoot() . '/config/lighthouse-translatable.php' => config_path('lighthouse-translatable.php'),
+        ]);
+    }
+
+    public function register(): void
+    {
+        $this->mergeConfigFrom(
+            $this->packageRoot() . '/config/lighthouse-translatable.php', 'lighthouse-translatable',
+        );
     }
 
     protected function packageRoot(): string

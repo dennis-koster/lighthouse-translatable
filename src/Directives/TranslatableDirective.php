@@ -17,8 +17,10 @@ use GraphQL\Language\AST\ObjectTypeDefinitionNode;
 use GraphQL\Language\AST\TypeDefinitionNode;
 use GraphQL\Language\Parser;
 use GraphQL\Language\Printer;
+use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\View\Factory;
+use Illuminate\Support\Str;
 use Nuwave\Lighthouse\Events\ManipulateAST;
 use Nuwave\Lighthouse\Schema\AST\ASTHelper;
 use Nuwave\Lighthouse\Schema\AST\DocumentAST;
@@ -33,6 +35,7 @@ class TranslatableDirective extends BaseDirective implements TypeManipulator
         protected Dispatcher $eventDispatcher,
         protected Factory $viewFactory,
         protected FieldDefinitionStringParser $fieldDefinitionStringParser,
+        protected Config $config,
     ) {
     }
 
@@ -288,12 +291,21 @@ SDL;
         string $rootTypeName,
     ): DirectiveArguments {
         return new DirectiveArguments(
-            $this->directiveArgValue('translationTypeName', "{$rootTypeName}Translation"),
-            $this->directiveArgValue('inputTypeName', "{$rootTypeName}TranslationInput"),
-            $this->directiveArgValue('translationsAttribute', 'translations'),
-            $this->directiveArgValue('generateTranslationType', true),
-            $this->directiveArgValue('generateInputType', true),
+            str_replace('<BaseType>', $rootTypeName, $this->getDirectiveArgumentOrConfigValue('translationTypeName')),
+            str_replace('<BaseType>', $rootTypeName, $this->getDirectiveArgumentOrConfigValue('inputTypeName')),
+            $this->getDirectiveArgumentOrConfigValue('translationsAttribute'),
+            $this->getDirectiveArgumentOrConfigValue('generateTranslationType'),
+            $this->getDirectiveArgumentOrConfigValue('generateInputType'),
             $this->directiveArgValue('appendInput', []),
+        );
+    }
+
+    protected function getDirectiveArgumentOrConfigValue(
+        string $argument,
+    ): mixed {
+        return $this->directiveArgValue(
+            $argument,
+            $this->config->get('lighthouse-translatable.directive-defaults.' . Str::kebab($argument)),
         );
     }
 }
