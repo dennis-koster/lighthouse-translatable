@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace DennisKoster\LighthouseTranslatable\DataObjects;
 
-readonly class Attribute
+class Attribute
 {
     public function __construct(
-        public string $name,
-        public string $type,
-        public bool $required,
+        public readonly string $name,
+        public readonly string $type,
+        public readonly bool $required,
         public string $directives = '',
     ) {
     }
