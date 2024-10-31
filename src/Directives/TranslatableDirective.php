@@ -21,6 +21,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Nuwave\Lighthouse\Events\ManipulateAST;
 use Nuwave\Lighthouse\Schema\AST\ASTHelper;
 use Nuwave\Lighthouse\Schema\AST\DocumentAST;
@@ -78,10 +79,7 @@ SDL;
         DocumentAST &$documentAST,
         TypeDefinitionNode &$typeDefinition
     ): void {
-        if (! $typeDefinition instanceof ObjectTypeDefinitionNode) {
-            return;
-        }
-
+        $typeDefinition     = $this->validatedTypeDefinition($typeDefinition);
         $typeName           = $typeDefinition->getName()->value;
         $directiveArguments = $this->getDirectiveArguments($typeName);
 
@@ -242,17 +240,24 @@ SDL;
     protected function stripTranslatableFieldsFromOriginalTypeDefinition(
         ObjectTypeDefinitionNode $typeDefinition,
     ): ObjectTypeDefinitionNode {
-        foreach ($typeDefinition->fields as $key => $field) {
-            $fieldType = $field->type;
+        $this->iterateTranslatableFields($typeDefinition, function ($field, $key) use ($typeDefinition) {
+            unset($typeDefinition->fields[$key]);
+        });
 
-            if (ASTHelper::getUnderlyingTypeName($fieldType) !== (new TranslatableString)->name) {
+        return $typeDefinition;
+    }
+
+    protected function iterateTranslatableFields(
+        ObjectTypeDefinitionNode $typeDefinition,
+        callable $action,
+    ): void {
+        foreach ($typeDefinition->fields as $key => $field) {
+            if (ASTHelper::getUnderlyingTypeName($field->type) !== (new TranslatableString)->name) {
                 continue;
             }
 
-            unset($typeDefinition->fields[$key]);
+            $action($field, $key);
         }
-
-        return $typeDefinition;
     }
 
     /**
@@ -264,15 +269,11 @@ SDL;
     ): array {
         $fields = [];
 
-        foreach ($typeDefinition->fields as $field) {
-            if (ASTHelper::getUnderlyingTypeName($field->type) !== (new TranslatableString)->name) {
-                continue;
-            }
-
+        $this->iterateTranslatableFields($typeDefinition, function (FieldDefinitionNode $field) use (&$fields, $asInput) {
             $attribute = $this->getAttributeFromFieldDefinitionNode($field);
 
             $fields[] = $this->makeFieldOrInputDefinition($attribute, $asInput);
-        }
+        });
 
         // Append locale fields
         $fields[] = $this->makeFieldOrInputDefinition(
@@ -307,5 +308,14 @@ SDL;
             $argument,
             $this->config->get('lighthouse-translatable.directive-defaults.' . Str::kebab($argument)),
         );
+    }
+
+    protected function validatedTypeDefinition(TypeDefinitionNode $typeDefinition): ObjectTypeDefinitionNode
+    {
+        if (! $typeDefinition instanceof ObjectTypeDefinitionNode) {
+            throw new InvalidArgumentException('Can not apply translatable directive to node of type ' . get_class($typeDefinition));
+        }
+
+        return $typeDefinition;
     }
 }
