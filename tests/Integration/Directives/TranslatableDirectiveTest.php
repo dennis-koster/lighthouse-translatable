@@ -243,9 +243,9 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
     }
 
     #[Test]
-    public function it_uses_a_custom_name_for_the_translations_attribute_specified_through_the_directive(): void
+    public function it_uses_a_custom_name_for_the_translations_field_specified_through_the_directive(): void
     {
-        $schema = $this->getSchema('@translatable(translationsAttribute: "alternativeLanguages")');
+        $schema = $this->getSchema('@translatable(translationsFieldName: "alternativeLanguages")');
 
         static::assertSchemaContains(
             $schema,
@@ -262,9 +262,9 @@ class TranslatableDirectiveTest extends AbstractIntegrationTestCase
     }
 
     #[Test]
-    public function it_uses_a_custom_name_for_the_translations_attribute_specified_through_the_config(): void
+    public function it_uses_a_custom_name_for_the_translations_field_specified_through_the_config(): void
     {
-        $this->app['config']->set('lighthouse-translatable.directive-defaults.translations-attribute', 'alternativeLanguages');
+        $this->app['config']->set('lighthouse-translatable.directive-defaults.translations-field-name', 'alternativeLanguages');
 
         $schema = $this->getSchema();
 
@@ -315,6 +315,56 @@ GRAPHQL;
             input BarInput {
                 translations: [NewsItemTranslationInput!]!
                 bar: String!
+            }',
+        );
+    }
+
+    #[Test]
+    public function it_uses_a_custom_name_for_the_translations_input_specified_through_the_directive(): void
+    {
+        $existingTypes = <<<GRAPHQL
+input FooInput {
+    foo: String!
+}
+GRAPHQL;
+
+        $schema = $this->getSchema(
+            '@translatable(appendInput: ["FooInput"], translationsInputName: "alternativeLanguages")',
+            $existingTypes,
+        );
+
+        static::assertSchemaContains(
+            $schema,
+            /** @lang GraphQL */ '
+            input FooInput {
+                alternativeLanguages: [NewsItemTranslationInput!]!
+                foo: String!
+            }',
+        );
+    }
+
+    #[Test]
+    public function it_uses_a_custom_name_for_the_translations_input_specified_through_the_config(): void
+    {
+        $this->app['config']->set('lighthouse-translatable.directive-defaults.translations-input-name', 'alternativeLanguages');
+
+        $existingTypes = <<<GRAPHQL
+input FooInput {
+    foo: String!
+}
+GRAPHQL;
+
+        $schema = $this->getSchema(
+            '@translatable(appendInput: ["FooInput"])',
+            $existingTypes,
+        );
+
+        static::assertSchemaContains(
+            $schema,
+            /** @lang GraphQL */ '
+            input FooInput {
+                alternativeLanguages: [NewsItemTranslationInput!]!
+                foo: String!
             }',
         );
     }

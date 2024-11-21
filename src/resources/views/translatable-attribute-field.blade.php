@@ -1,5 +1,5 @@
 {{--
-    This template is used for the attributes that are automatically generated for the translation input type.
+    This template is used for the field definitions that are automatically generated for the translation type.
 
     --------------------------------------------------
 

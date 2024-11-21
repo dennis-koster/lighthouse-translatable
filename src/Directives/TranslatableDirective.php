@@ -56,9 +56,13 @@ directive @translatable(
     """
     translationTypeName: String! = "<BaseType>Translation"
     """
-    The name of the attribute that holds the array of translations. Defaults to "translations".
+    The name of the field that holds the array of translations. Defaults to "translations".
     """
-    translationsAttribute: String! = "translations"
+    translationsFieldName: String! = "translations"
+    """
+    The name of the input that holds the array of translation inputs, when using appendInput. Defaults to "translations".
+    """
+    translationsInputName: String! = "translations"
     """
     Whether or not to generate a type for the translation input definition. Defaults to true.
     """
@@ -182,8 +186,8 @@ SDL;
     ): FieldDefinitionNode {
         $template = $this->viewFactory
             ->make('lighthouse-translatable::translations-field', [
-                'attributeName'       => $directiveArguments->translationsAttributeName,
-                'translationTypeName' => $directiveArguments->translationTypeName,
+                'name' => $directiveArguments->translationsFieldName,
+                'type' => $directiveArguments->translationTypeName,
             ])
             ->render();
 
@@ -201,9 +205,9 @@ SDL;
         DirectiveArguments $directiveArguments,
     ): InputValueDefinitionNode {
         $template = $this->viewFactory
-            ->make('lighthouse-translatable::translations-input-field', [
-                'attributeName'            => $directiveArguments->translationsAttributeName,
-                'translationInputTypeName' => $directiveArguments->inputTypeName,
+            ->make('lighthouse-translatable::translations-input', [
+                'name' => $directiveArguments->translationsInputName,
+                'type' => $directiveArguments->inputTypeName,
             ])
             ->render();
 
@@ -294,7 +298,8 @@ SDL;
         return new DirectiveArguments(
             str_replace('<BaseType>', $rootTypeName, $this->getDirectiveArgumentOrConfigValue('translationTypeName')),
             str_replace('<BaseType>', $rootTypeName, $this->getDirectiveArgumentOrConfigValue('inputTypeName')),
-            $this->getDirectiveArgumentOrConfigValue('translationsAttribute'),
+            $this->getDirectiveArgumentOrConfigValue('translationsFieldName'),
+            $this->getDirectiveArgumentOrConfigValue('translationsInputName'),
             $this->getDirectiveArgumentOrConfigValue('generateTranslationType'),
             $this->getDirectiveArgumentOrConfigValue('generateInputType'),
             $this->directiveArgValue('appendInput', []),

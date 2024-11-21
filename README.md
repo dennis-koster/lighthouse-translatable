@@ -29,7 +29,8 @@ The directive comes with a couple of arguments, all of them optional.
 |------------------------------|----------------------------------------------------------------------------|--------------------------------------|
 | **generateTranslationType**  | Whether or not to generate a type for the translation definition.          | Boolean: `True`                      |
 | **translationTypeName**      | The name of the type to be generated for the translation definition.       | String: `<BaseType>Translation`      |
-| **translationsAttribute**    | The name of the attribute that holds the array of translations.            | String: `translations`               |
+| **translationsFieldName**    | The name of the field that holds the array of translations.                | String: `translations`               |
+| **translationsInputName**    | The name of the input that holds the array of translations inputs.         | String: `translations`               |
 | **generateInputType**        | Whether or not to generate a type for the translation input definition.    | Boolean: `True`                      |
 | **inputTypeName**            | The name of the type to be generated for the translation input definition. | String: `<BaseType>TranslationInput` |
 | **appendInput**              | The inputs the translation model input should be appended to.              | Array: []                            |
@@ -186,18 +187,18 @@ type NewsItem
 
 input CreateNewsItemInput {
     slug: String!
-    translations: [NewsItemTranslationInput!]! # translations-input-field.blade.php
+    translations: [NewsItemTranslationInput!]! # translations-input.blade.php
 }
 
 type NewsItemTranslation {
-    locale: String! # translations-attribute-field.blade.php
-    title: String! # translations-attribute-field.blade.php
-    introduction: String # translations-attribute-field.blade.php
+    locale: String! # translatable-attribute-field.blade.php
+    title: String! # translatable-attribute-field.blade.php
+    introduction: String # translatable-attribute-field.blade.php
 }
 
 input NewsItemTranslationInput {
-    locale: String! # translations-input-field.blade.php
-    title: String! # translations-input-field.blade.php
-    introduction: String # translations-input-field.blade.php
+    locale: String! # translatable-attribute-input.blade.php
+    title: String! # translatable-attribute-input.blade.php
+    introduction: String # translatable-attribute-input.blade.php
 }
 ```

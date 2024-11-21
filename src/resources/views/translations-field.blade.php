@@ -1,5 +1,5 @@
 {{--
-    You can customize the translations attribute that the translatable directive appends to the
+    You can customize the translations field definition that the translatable directive appends to the
     root type through this stub.
 
     For instance, you might want to add a `@hasMany` directive to the generated output to optimize
@@ -23,7 +23,7 @@
     --------------------------------------------------
 
     Available variables:
-    $attributeName: The name of the attribute to be generated. This defaults to "translations"
-    $translationTypeName: The name of the translation type. For instance "NewsItemTranslation".
+    $name: The name of the attribute to be generated. This defaults to "translations"
+    $type: The name of the translation type. For instance "NewsItemTranslation".
 --}}
-{{$attributeName}}: [{{$translationTypeName}}!]!
+{{$name}}: [{{$type}}!]!
