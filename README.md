@@ -34,6 +34,8 @@ The directive comes with a couple of arguments, all of them optional.
 | **inputTypeName**            | The name of the type to be generated for the translation input definition. | String: `<BaseType>TranslationInput` |
 | **appendInput**              | The inputs the translation model input should be appended to.              | Array: []                            |
 
+The default values for the arguments may be altered through the publishable config file.
+
 ## Basic usage
 In its most primal form, the directive uses some sensible defaults. It will always generate a translation definition and 
 a translation input definition for the type the directive is applied to.
@@ -97,7 +99,7 @@ input CreateNewsItemInput {
 # Will append the translations attribute to the CreateNewsItemInput
 input CreateNewsItemInput {
     slug: String!
-    translations: [NewsItemTranslation!]!
+    translations: [NewsItemTranslationInput!]!
 }
 ```
 
@@ -154,4 +156,48 @@ The directive comes with a configuration file that can be published through:
 php artisan vendor:publish --provider=DennisKoster\\LighthouseTranslatable\\Providers\\LighthouseTranslatableProvider
 ```
 
-Through the configuration file, the stub file locations can be altered. 
+Through the configuration file, all the default values for the directive may be adjusted to your liking.
+
+## View stubs
+The generated types are created using blade views. These blade views can also be published and adjusted to your needs.
+
+**Blade view overview**
+
+```graphql
+type NewsItem @translatable(appendInput: ["CreateNewsItemInput"])
+{
+    id: ID!
+    title: TranslatableString!
+    introduction: TranslatableString
+}
+
+input CreateNewsItemInput {
+    slug: String!
+}
+
+# Will result in the following schema definition
+type NewsItem
+{
+    id: ID!
+    title: TranslatableString!
+    introduction: TranslatableString
+    translations: [NewsItemTranslation!]! # translations-field.blade.php
+}
+
+input CreateNewsItemInput {
+    slug: String!
+    translations: [NewsItemTranslationInput!]! # translations-input-field.blade.php
+}
+
+type NewsItemTranslation {
+    locale: String! # translations-attribute-field.blade.php
+    title: String! # translations-attribute-field.blade.php
+    introduction: String # translations-attribute-field.blade.php
+}
+
+input NewsItemTranslationInput {
+    locale: String! # translations-input-field.blade.php
+    title: String! # translations-input-field.blade.php
+    introduction: String # translations-input-field.blade.php
+}
+```

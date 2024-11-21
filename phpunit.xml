@@ -16,6 +16,5 @@
     </testsuites>
     <php>
         <server name="TESTBENCH_WORKING_PATH" value="/var/www/html"/>
-        <server name="LIGHTHOUSE_TRANSLATABLE_STUBS_DIRECTORY" value="src/stubs" />
     </php>
 </phpunit>
